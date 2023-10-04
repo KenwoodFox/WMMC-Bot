@@ -3,6 +3,7 @@
 
 
 import os
+import imp
 import discord
 import logging
 import requests
@@ -12,10 +13,28 @@ from typing import Literal, Optional
 from discord import app_commands
 from discord.ext import commands, tasks
 
+pf = imp.load_source(
+    "scrape_pfsense_dhcp", "fops_bot/scripts/pfsense_arp/pfsense-dhcp.py"
+)
+
 
 class servicesCog(commands.Cog, name="Bconsole"):
     def __init__(self, bot):
+        # Bot instance
         self.bot = bot
+
+        # Alert chan
+        self.alert_channel = self.bot.get_channel(
+            int(os.environ.get("ALERT_CHAN_ID", ""))
+        )
+
+        # Setup for arp watcher
+        self.previousArpData = []
+        url = os.environ.get("PFSENSE_URL", "")
+        self.pfurl = url.rstrip("/") + "/status_dhcp_leases.php"
+        self.pfuser = os.environ.get("PFSENSE_USER", "")
+        self.pfpassword = os.environ.get("PFSENSE_PASSWORD", "")
+        self.watch_arp.start()
 
     def sizeof_fmt(self, num):
         for unit in ("Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"):
@@ -99,6 +118,46 @@ class servicesCog(commands.Cog, name="Bconsole"):
             await ctx.followup.send(embed=embed)
         else:
             await ctx.response.send_message("Sorry! Couldn't find that service.")
+
+    @app_commands.command(name="testarp")
+    async def testarp(self, ctx: discord.Interaction):
+        """
+        Tests the arp.
+        """
+
+        await ctx.response.send_message(
+            f"Number one on the list is `{pf.scrape_pfsense_dhcp(self.pfurl, self.pfuser,self.pfpassword)[0]}`."
+        )
+
+    @tasks.loop(seconds=40)
+    async def watch_arp(self):
+        # Runs every 120 seconds
+        current = pf.scrape_pfsense_dhcp(self.pfurl, self.pfuser, self.pfpassword)
+
+        # Strip unused keys from dict
+        for key_to_strip in ["Start", "End"]:
+            for e, element in enumerate(current):
+                current[e].pop(key_to_strip)
+
+        logging.info("Checking ARP table.")
+
+        # Check if data is valid before spamming everyone
+        if len(self.previousArpData) > 0:
+            _l = []
+            # Check for changed hosts
+            for element in current:
+                if element not in self.previousArpData:
+                    _l.append(element)
+
+            # Iter all the hosts that have changed
+            for host in _l:
+                logging.info(host)
+                await self.alert_channel.send(
+                    f"Host {host['Hostname']} (ip: {host['IP address']}, id: {host['Client Id']}) changed to {host['Online']}"
+                )
+
+        # Record the previous data as the current
+        self.previousArpData = current
 
 
 async def setup(bot):
