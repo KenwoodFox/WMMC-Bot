@@ -135,7 +135,7 @@ class servicesCog(commands.Cog, name="Bconsole"):
         current = pf.scrape_pfsense_dhcp(self.pfurl, self.pfuser, self.pfpassword)
 
         # Strip unused keys from dict
-        for key_to_strip in ["Start", "End"]:
+        for key_to_strip in ["Start", "End", "Online"]:
             for e, element in enumerate(current):
                 current[e].pop(key_to_strip)
 
@@ -153,7 +153,7 @@ class servicesCog(commands.Cog, name="Bconsole"):
             for host in _l:
                 logging.info(host)
                 await self.alert_channel.send(
-                    f"Host {host['Hostname']} (ip: {host['IP address']}, id: {host['Client Id']}) changed to {host['Online']}"
+                    f"ARP update host: `{host['Hostname']}` ip: `{host['IP address']}`, id: `{host['Client Id']}`"
                 )
 
         # Record the previous data as the current
