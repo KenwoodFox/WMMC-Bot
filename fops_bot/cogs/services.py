@@ -139,7 +139,9 @@ class servicesCog(commands.Cog, name="Bconsole"):
             for e, element in enumerate(current):
                 current[e].pop(key_to_strip)
 
-        logging.info("Checking ARP table.")
+        logging.debug("Checking ARP table.")
+
+        logging.info(self.previousArpData)
 
         # Check if data is valid before spamming everyone
         if len(self.previousArpData) > 0:
@@ -152,9 +154,12 @@ class servicesCog(commands.Cog, name="Bconsole"):
             # Iter all the hosts that have changed
             for host in _l:
                 logging.info(host)
-                await self.alert_channel.send(
-                    f"ARP update host: `{host['Hostname']}` ip: `{host['IP address']}`, id: `{host['Client Id']}`"
-                )
+                _msg = f"New host in ARP table: `{host['Hostname']}` ip: `{host['IP address']}`"
+
+                if len(host["Description"]) > 2:
+                    _msg += f", id: `{host['Description']}`"
+
+                await self.alert_channel.send(_msg)
 
         # Record the previous data as the current
         self.previousArpData = current
