@@ -141,8 +141,6 @@ class servicesCog(commands.Cog, name="Bconsole"):
 
         logging.debug("Checking ARP table.")
 
-        logging.info(self.previousArpData)
-
         # Check if data is valid before spamming everyone
         if len(self.previousArpData) > 0:
             _l = []
@@ -157,7 +155,7 @@ class servicesCog(commands.Cog, name="Bconsole"):
                 _msg = f"New host in ARP table: `{host['Hostname']}` ip: `{host['IP address']}`"
 
                 if len(host["Description"]) > 2:
-                    _msg += f", id: `{host['Description']}`"
+                    _msg += f", desc: `{host['Description']}`"
 
                 await self.alert_channel.send(_msg)
 
