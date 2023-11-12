@@ -119,16 +119,6 @@ class servicesCog(commands.Cog, name="Bconsole"):
         else:
             await ctx.response.send_message("Sorry! Couldn't find that service.")
 
-    @app_commands.command(name="testarp")
-    async def testarp(self, ctx: discord.Interaction):
-        """
-        Tests the arp.
-        """
-
-        await ctx.response.send_message(
-            f"Number one on the list is `{pf.scrape_pfsense_dhcp(self.pfurl, self.pfuser,self.pfpassword)[0]}`."
-        )
-
     @tasks.loop(seconds=40)
     async def watch_arp(self):
         # Runs every 120 seconds
