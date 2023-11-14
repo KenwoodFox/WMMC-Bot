@@ -33,7 +33,7 @@ class CameraCog(commands.Cog, name="Snap"):
 
             # Extract frame
             subprocess.run(
-                f"ffmpeg -i rtsp://10.85.1.31/ucast/11 -frames:v 1 -q:v 2 /tmp/{camera.value}.png",
+                f"ffmpeg -y -i rtsp://10.85.1.31/ucast/11 -frames:v 1 -q:v 2 /tmp/{camera.value}.png",
                 shell=True,
             )
             imageFile = discord.File(f"/tmp/{camera.value}.png")
