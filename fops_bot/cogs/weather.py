@@ -16,6 +16,10 @@ from discord.ext import commands, tasks
 
 from utilities.common import seconds_until
 
+cler = "🟩"
+caut = "🟨"
+warn = "🟥"
+
 
 async def getweather():
     # declare the client. the measuring unit used defaults to the metric system (celcius, km/h, etc.)
@@ -28,29 +32,49 @@ async def getweather():
 
         forecast = next(weather.forecasts)
 
+        showTempWarning = False
+        tempWarning = "WARNING: Low temperature can reduce tire flex and adversely affecting handling and grip, very low temperature brings a snow and ice risk.\n"
+        showRainWarning = False
+        rainWarning = "WARNING: Rain can reduce handling and grip, accelerate corrosion and lower visibility.\n"
+
         data = f"""\tJoes Weather Forecast for {forecast.date}\t\n"""
         for hourly in forecast.hourly:
-            warn = False
-            # Conditions to warn riders
-            if hourly.temperature < 40 or hourly.temperature > 105:
-                warn = True
-                logging.info(f"Temperature ({hourly.temperature}) was out of range")
+            warnings = []
 
+            # First, check if its early enough to even care
+            if hourly.time.hour < 4:  # less than 4AM
+                logging.debug(f"Skipping {hourly}")
+                continue  # Skip to next forecast
+
+            # Check temperature
+            if hourly.temperature < 40 or hourly.temperature > 105:
+                warnings.append(warn)
+                showTempWarning = True
+                logging.info(f"Temperature ({hourly.temperature}) was out of range")
+            else:
+                warnings.append(cler)
+
+            # Check for rain
             if "rain" in hourly.description:
-                warn = True
+                warnings.append(warn)
+                showRainWarning = True
                 logging.info(f"Rain detected in {hourly.description}")
+            else:
+                warnings.append(cler)
 
             data += f"{hourly.time.strftime('%I %p')} Temperature {hourly.temperature:3}f, {hourly.description:16}\t"
 
-            if warn:
-                data += "(!)\n"
-            else:
-                data += "\n"
+            for warning in warnings:
+                data += warning
+            data += "\n"
 
         data += f"\nVisibility {weather.current.visibility} miles\n"
 
-        if warn:
-            data += "\n (!) Weather conditions may not be favorable for riding. (!)\n"
+        data += "\n"
+        if showRainWarning:
+            data += rainWarning
+        if showTempWarning:
+            data += tempWarning
 
         data += f"\nVersion {os.environ.get('GIT_COMMIT')}"
 
