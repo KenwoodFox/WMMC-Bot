@@ -1,3 +1,5 @@
 discord.py
 requests
 lxml
+pytz
+python_weather
