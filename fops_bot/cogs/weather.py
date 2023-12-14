@@ -89,9 +89,6 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
         self.localtz = pytz.timezone("US/Eastern")
 
         # Tasks
-        self.alert_channel = self.bot.get_channel(
-            int(os.environ.get("WEATHER_CHAN_ID", ""))
-        )
         self.weather_alert.start()
 
     @tasks.loop(minutes=1)
@@ -103,9 +100,14 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
         await asyncio.sleep(wait)
         logging.info("Running now!")
 
-        data = await getweather()
-        await self.alert_channel.send(f"```\n{data}\n```")
+        logging.info("Getting alert channel")
+        alert_channel = self.bot.get_channel(int(os.environ.get("WEATHER_CHAN_ID", "")))
 
+        logging.info("Getting weather")
+        data = await getweather()
+        await alert_channel.send(f"```\n{data}\n```")
+
+        logging.info("Done")
         await asyncio.sleep(60)  # So we dont spam
 
     @app_commands.command(name="weather")
