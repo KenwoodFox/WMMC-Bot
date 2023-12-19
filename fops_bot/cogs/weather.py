@@ -14,6 +14,8 @@ from typing import Literal, Optional
 from discord import app_commands
 from discord.ext import commands, tasks
 
+from datetime import datetime, timedelta, time, timezone
+
 from utilities.common import seconds_until
 
 cler = "🟩"
@@ -62,7 +64,7 @@ async def getweather():
             else:
                 warnings.append(cler)
 
-            data += f"{hourly.time.strftime('%I %p')} Temperature {hourly.temperature:3}f, {hourly.description:16}\t"
+            data += f"{hourly.time.strftime('%I %p')} Temperature {hourly.temperature:3}f, {hourly.description:22}\t"
 
             for warning in warnings:
                 data += warning
@@ -96,7 +98,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
         logging.info("Scheduling weather alert")
 
         wait = seconds_until(8, 00)  # Wait here till 8am
-        logging.info(f"Waiting {wait} before running")
+        logging.info(f"Waiting {wait:.2f} seconds before running")
         await asyncio.sleep(wait)
         logging.info("Running now!")
 
@@ -105,7 +107,29 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
 
         logging.info("Getting weather")
         data = await getweather()
-        await alert_channel.send(f"```\n{data}\n```")
+
+        # How many attempts we get
+        tries = 3
+        success = False
+
+        while tries > 0:
+            last = await alert_channel.fetch_message(alert_channel.last_message_id)
+            now = datetime.now(timezone.utc)
+
+            tries -= 1
+
+            if last.created_at > now - timedelta(minutes=2):
+                logging.info("Message published successfully")
+                success = True
+                break
+            else:
+                logging.warn(
+                    f"Last weather reading is out of date, sending.. {tries} left"
+                )
+                await alert_channel.send(f"```\n{data}\n```")
+
+        if success != True:
+            logging.error("Did not send succesfully...")
 
         logging.info("Done")
         await asyncio.sleep(60)  # So we dont spam
