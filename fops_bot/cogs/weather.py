@@ -97,41 +97,51 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
     async def weather_alert(self):
         logging.info("Scheduling weather alert")
 
-        wait = seconds_until(8, 00)  # Wait here till 8am
-        logging.info(f"Waiting {wait:.2f} seconds before running")
-        await asyncio.sleep(wait)
-        logging.info("Running now!")
+        try:
+            wait = seconds_until(8, 00)  # Wait here till 8am
+            logging.info(f"Waiting {wait:.2f} seconds before running")
+            await asyncio.sleep(wait)
+            logging.info("Running now!")
 
-        logging.info("Getting alert channel")
-        alert_channel = self.bot.get_channel(int(os.environ.get("WEATHER_CHAN_ID", "")))
+            logging.info("Getting alert channel")
+            alert_channel = self.bot.get_channel(
+                int(os.environ.get("WEATHER_CHAN_ID", ""))
+            )
 
-        logging.info("Getting weather")
-        data = await getweather()
+            logging.info("Getting weather")
+            data = await getweather()
 
-        # How many attempts we get
-        tries = 3
-        success = False
+            # How many attempts we get
+            tries = 3
+            success = False
 
-        while tries > 0:
-            last = await alert_channel.fetch_message(alert_channel.last_message_id)
-            now = datetime.now(timezone.utc)
+            while tries > 0:
+                try:
+                    last = await alert_channel.fetch_message(
+                        alert_channel.last_message_id
+                    )
+                except:
+                    last = None
+                now = datetime.now(timezone.utc)
 
-            tries -= 1
+                tries -= 1
 
-            if last.created_at > now - timedelta(minutes=2):
-                logging.info("Message published successfully")
-                success = True
-                break
-            else:
-                logging.warn(
-                    f"Last weather reading is out of date, sending.. {tries} left"
-                )
-                await alert_channel.send(f"```\n{data}\n```")
+                if (last != None) and (last.created_at > now - timedelta(minutes=2)):
+                    logging.info("Message published successfully")
+                    success = True
+                    break
+                else:
+                    logging.warn(
+                        f"Last weather reading is out of date, sending.. {tries} left"
+                    )
+                    await alert_channel.send(f"```\n{data}\n```")
 
-        if success != True:
-            logging.error("Did not send succesfully...")
+            if success != True:
+                logging.error("Did not send succesfully...")
 
-        logging.info("Done")
+            logging.info("Done")
+        except Exception as e:
+            logging.error(f"Error!! {e}")
         await asyncio.sleep(60)  # So we dont spam
 
     @app_commands.command(name="weather")
