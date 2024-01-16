@@ -57,7 +57,8 @@ async def getweather():
                 warnings.append(cler)
 
             # Check for rain
-            if "rain" in hourly.description:
+            rainList = ["rain", "snow", "sleet", "fog", "hail"]
+            if any(item in hourly.description for item in rainList):
                 warnings.append(warn)
                 showRainWarning = True
                 logging.info(f"Rain detected in {hourly.description}")
@@ -73,10 +74,10 @@ async def getweather():
         data += f"\nVisibility {weather.current.visibility} miles\n"
 
         data += "\n"
-        if showRainWarning:
-            data += rainWarning
-        if showTempWarning:
-            data += tempWarning
+        # if showRainWarning:
+        #     data += rainWarning
+        # if showTempWarning:
+        #     data += tempWarning
 
         data += f"\nVersion {os.environ.get('GIT_COMMIT')}"
 
