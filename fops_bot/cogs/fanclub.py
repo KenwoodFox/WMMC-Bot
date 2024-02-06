@@ -82,7 +82,8 @@ class FanclubCog(commands.Cog, name="FanclubCog"):
 
             if ct[0] == "(":
                 # Checks if the message is OOC, and if it is, skips it
-                await msg.add_reaction("🔇")
+                # await msg.add_reaction("🔇")
+                pass
             else:
                 # Time to actually forward a message!
                 recipient = await self.bot.fetch_user(user)
