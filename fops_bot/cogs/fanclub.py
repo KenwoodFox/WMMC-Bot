@@ -62,17 +62,21 @@ class FanclubCog(commands.Cog, name="FanclubCog"):
         chan = int(os.environ.get("HOLE_CHAN", ""))
         user = int(os.environ.get("HOLE_USER", ""))
 
+        # Dont respond to ourself.
+        if msg.author.bot:
+            return
+
         if isinstance(msg.channel, discord.channel.DMChannel):
             "What to do if dm'd directly!"
             logging.info(f"Got a dm! {msg.content}")
 
-            holeChan = self.bot.get_channel(chan)
-            await holeChan.send(msg.content)
-            await msg.add_reaction("📬")
-        elif (
-            not msg.author.bot  # Not ourself
-            and msg.channel.id == chan  # and in the right channel
-        ):
+            if msg.author.id == user:
+                holeChan = self.bot.get_channel(chan)
+                await holeChan.send(msg.content)
+                await msg.add_reaction("📬")
+            else:
+                await msg.add_reaction("❌")
+        elif msg.channel.id == chan:  # in the right channel
             # Extract the content
             ct = msg.content
 
