@@ -117,6 +117,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
             success = False
 
             while tries > 0:
+                await asyncio.sleep(5)  # Wait so we dont spam too quickly
                 try:
                     last = await alert_channel.fetch_message(
                         alert_channel.last_message_id
