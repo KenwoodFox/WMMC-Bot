@@ -1,5 +1,5 @@
-# FOSNHU
-# 2021, Fops Bot
+# WMMC
+# 2023, WMMC
 # MIT License
 
 import os
@@ -11,7 +11,7 @@ from discord import Intents
 from discord.ext import commands
 
 
-class FopsBot(object):
+class WMMCBot(object):
     def __init__(self):
         # Intents (new iirc)
         intents = Intents(messages=True, guilds=True)
@@ -33,7 +33,7 @@ class FopsBot(object):
         self.debug = str(os.environ.get("DEBUG")).lower() in ("true", "1", "t")
 
         # Append our workdir to the path (for importing modules)
-        self.workdir = "/app/fops_bot/"
+        self.workdir = "/app/wmmc_bot/"
         sys.path.append(self.workdir)
 
         # Setup logging.
