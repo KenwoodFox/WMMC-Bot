@@ -15,7 +15,6 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 from datetime import datetime, timedelta, time, timezone, date
-from datetime import datetime, timedelta, time, timezone, date
 
 from utilities.common import seconds_until
 
@@ -34,7 +33,6 @@ async def getweather():
         # print(weather.current.temperature)
 
         forecast = next(weather.daily_forecasts)
-        forecast = next(weather.daily_forecasts)
 
         showTempWarning = False
         tempWarning = "WARNING: Low temperature can reduce tire flex and adversely affecting handling and grip, very low temperature brings a snow and ice risk.\n"
@@ -42,7 +40,6 @@ async def getweather():
         rainWarning = "WARNING: Rain can reduce handling and grip, accelerate corrosion and lower visibility.\n"
 
         data = f"""\tJoes Weather Forecast for {forecast.date}\t\n"""
-        for hourly in forecast.hourly_forecasts:
         for hourly in forecast.hourly_forecasts:
             warnings = []
 
@@ -74,7 +71,6 @@ async def getweather():
                 data += warning
             data += "\n"
 
-        data += f"\nVisibility {weather.visibility} miles\n"
         data += f"\nVisibility {weather.visibility} miles\n"
 
         data += "\n"
@@ -169,7 +165,6 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
         return data
 
     @app_commands.command(name="weather")
-    async def weathercommand(self, ctx: discord.Interaction):
     async def weathercommand(self, ctx: discord.Interaction):
         """
         Shows you the weather
