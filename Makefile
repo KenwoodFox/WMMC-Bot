@@ -34,7 +34,7 @@ lint:
 
 # Run the tests
 test: build
-	docker-compose run fops_bot test
+	docker-compose run wmmc_bot test
 
 # Install requirements (locally)
 install-requirements:
@@ -55,11 +55,11 @@ docker-rm: stop
 
 # Get container shell
 shell:
-	docker-compose run --entrypoint "/bin/bash" fops_bot
+	docker-compose run --entrypoint "/bin/bash" wmmc_bot
 
 # Run command in container
 run: build
-	docker-compose run fops_bot $(COMMAND)
+	docker-compose run wmmc_bot $(COMMAND)
 
 # Stop container
 stop:
@@ -71,5 +71,5 @@ prod:
 	docker-compose -f docker-compose-prod.yml up -d
 
 # Development stuff
-dev:
+dev: build
 	docker-compose -f docker-compose.yml up

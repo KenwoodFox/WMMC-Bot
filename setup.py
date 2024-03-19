@@ -5,16 +5,16 @@ from setuptools import setup, find_packages
 readme = open("README.md").read()
 
 setup(
-    name="fops_bot",
+    name="wmmc_bot",
     description="todo",
-    author="Furries of SNHU",
+    author="WMMC",
     author_email="tbd@gmail.com",
-    url="https://github.com/KenwoodFox/FOpS-Bot",
-    packages=find_packages(include=["fops_bot"]),
-    package_dir={"fops-bot": "fops_bot"},
+    url="https://github.com/KenwoodFox/wmmc-Bot",
+    packages=find_packages(include=["wmmc_bot"]),
+    package_dir={"wmmc-bot": "wmmc_bot"},
     entry_points={
         "console_scripts": [
-            "fops-bot=fops_bot.__main__:main",
+            "wmmc-bot=wmmc_bot.__main__:main",
         ],
     },
     python_requires=">=3.10.0",

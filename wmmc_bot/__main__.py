@@ -3,8 +3,8 @@
 # MIT License
 
 
-from .main import FopsBot
+from .main import WMMCBot
 
-bot = FopsBot()
+bot = WMMCBot()
 
 bot.run()
