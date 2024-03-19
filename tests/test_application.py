@@ -1,12 +1,12 @@
 import pytest
 import os.path
 
-from fops_bot.main import FopsBot
+from wmmc_bot.main import WMMCBot
 
 
 @pytest.fixture
 def app():
-    return FopsBot()
+    return WMMCBot()
 
 
 class TestApplication(object):
