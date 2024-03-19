@@ -14,7 +14,7 @@ from typing import Literal, Optional
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from datetime import datetime, timedelta, time, timezone
+from datetime import datetime, timedelta, time, timezone, date
 
 from utilities.common import seconds_until
 
@@ -32,7 +32,7 @@ async def getweather():
         # returns the current day's forecast temperature (int)
         # print(weather.current.temperature)
 
-        forecast = next(weather.forecasts)
+        forecast = next(weather.daily_forecasts)
 
         showTempWarning = False
         tempWarning = "WARNING: Low temperature can reduce tire flex and adversely affecting handling and grip, very low temperature brings a snow and ice risk.\n"
@@ -40,7 +40,7 @@ async def getweather():
         rainWarning = "WARNING: Rain can reduce handling and grip, accelerate corrosion and lower visibility.\n"
 
         data = f"""\tJoes Weather Forecast for {forecast.date}\t\n"""
-        for hourly in forecast.hourly:
+        for hourly in forecast.hourly_forecasts:
             warnings = []
 
             # First, check if its early enough to even care
@@ -71,7 +71,7 @@ async def getweather():
                 data += warning
             data += "\n"
 
-        data += f"\nVisibility {weather.current.visibility} miles\n"
+        data += f"\nVisibility {weather.visibility} miles\n"
 
         data += "\n"
         # if showRainWarning:
@@ -146,15 +146,30 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
             logging.error(f"Error!! {e}")
         await asyncio.sleep(60)  # So we dont spam
 
+    def getDaysToEvent(self):
+        """Returns the days to an event"""
+        today = date.today()
+        event = date(2024, 4, 27)
+        diff = event - today
+
+        if diff.days >= 0:
+            return f"{diff.days} days until the MSF course!!!"
+        return ""
+
     @app_commands.command(name="weather")
-    async def version(self, ctx: discord.Interaction):
+    async def weathercommand(self, ctx: discord.Interaction):
         """
         Shows you the weather
         """
+        try:
+            data = await getweather()
 
-        data = await getweather()
+            daysToEvent = self.getDaysToEvent()
+        except Exception as e:
+            data = f"Something went wrong!\n```{e}```"
+            daysToEvent = ""
 
-        await ctx.response.send_message(f"```\n{data}\n```")
+        await ctx.response.send_message(f"```\n{data}\n\n{daysToEvent}\n```")
 
 
 async def setup(bot):
