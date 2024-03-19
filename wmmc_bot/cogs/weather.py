@@ -111,6 +111,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
 
             logging.info("Getting weather")
             data = await getweather()
+            daysToEvent = self.getDaysToEvent()
 
             # How many attempts we get
             tries = 3
@@ -136,7 +137,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
                     logging.warn(
                         f"Last weather reading is out of date, sending.. {tries} left"
                     )
-                    await alert_channel.send(f"```\n{data}\n```")
+                    await alert_channel.send(f"```\n{data}\n\n{daysToEvent}```")
 
             if success != True:
                 logging.error("Did not send succesfully...")
