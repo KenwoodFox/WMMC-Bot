@@ -64,7 +64,6 @@ class StatTracker(commands.Cog, name="StatTacker"):
         msg = f"```md\n  ===  WMMC Stats!  ===  \n\n{'Member':20}{'Bike':10}{'Helmet':10}{'Intercom':10}{'Training':10}{'Mileage':10}\n"
 
         for user in data:
-
             # Need to fetch local username
             guild = ctx.guild
             member = guild.get_member(int(user))
