@@ -3,3 +3,4 @@ requests
 lxml
 pytz
 python_weather
+pyyaml
