@@ -2,28 +2,42 @@
 # Do cool things like track stats!
 
 import os
-import yaml
 import discord
 import logging
 
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from typing import Literal, Optional
 from discord import app_commands
 from discord.ext import commands
 
+# Define the SQLAlchemy engine
+engine = create_engine("db://postgres_db/database", echo=True)
+
+# Create a session maker
+Session = sessionmaker(bind=engine)
+
+# Create a base class for declarative class definitions
+Base = declarative_base()
+
+
+# This is the model we'll use to store the stats
+class UserStats(Base):
+    __tablename__ = "user_stats"
+
+    id = Column(Integer, primary_key=True)
+    helmet = Column(String)
+    model = Column(String)
+    intercom = Column(String)
+    mileage = Column(Integer)
+    training = Column(String)
+
 
 class StatTracker(commands.Cog, name="StatTacker"):
     def __init__(self, bot):
         self.bot = bot
-
-        # Configure our yaml storage
-        self.yamlPath = "/data/stats.yaml"
-        if not os.path.exists(self.yamlPath):
-            logging.warn("Creating blank file")
-            with open(self.yamlPath, "w") as file:
-                yaml.dump({}, file)
-        else:
-            logging.info(f"Found yaml file at {self.yamlPath}")
 
     @app_commands.command(name="record_stats")
     async def recordStats(

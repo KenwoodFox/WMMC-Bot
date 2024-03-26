@@ -1,20 +1,19 @@
 version: "3.7"
 
 services:
-  # db:
-  #   image: postgres:10.5
-  #   restart: always
-  #   environment:
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #     - POSTGRES_DB=wmmc_bot_db
-  #   logging:
-  #     options:
-  #       max-size: 10m
-  #       max-file: "3"
-  #   ports:
-  #     - "5438:5432"
-  #   tmpfs: /var/lib/postgresql/data
+  db:
+    image: postgres:10.5
+    restart: always
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=database
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - "5438:5432"
+    tmpfs: /var/lib/postgresql/data
 
   wmmc_bot:
     image: wmmc_bot:$TAG
@@ -23,8 +22,8 @@ services:
       dockerfile: Dockerfile
     environment:
       TZ: America/New_York
-      BOT_TOKEN: "top.secret.token"
-      ALERT_CHAN_ID: 509919104908525568
+      BOT_TOKEN: "top.secret"
+      ALERT_CHAN_ID: 719692563405078620
       WEATHER_CHAN_ID: 719692563405078620
     restart: "no"
     command: "true"
