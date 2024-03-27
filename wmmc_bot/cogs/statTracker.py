@@ -5,7 +5,7 @@ import os
 import discord
 import logging
 
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, desc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -83,7 +83,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return [app_commands.Choice(name=v, value=v) for v in ["BRC", "ERC"]]
+        return [app_commands.Choice(name=v, value=v) for v in ["BRC", "ERC", "None"]]
 
     def get_unique_values(self, column_name):
         """Return a list of unique values for a particular colum name"""
@@ -131,7 +131,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
         session = Session()
         try:
             # Query the database for users ordered by mileage
-            users = session.query(UserStats).order_by(UserStats.mileage).all()
+            users = session.query(UserStats).order_by(desc(UserStats.mileage)).all()
             return users
         finally:
             session.close()
