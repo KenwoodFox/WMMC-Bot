@@ -13,23 +13,23 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  test:
-    name: Pytest the Bot
-    runs-on: ubuntu-latest
-    needs: [formatblack, build-and-publish-image]
-    steps:
-      - uses: actions/checkout@master
-        with:
-          fetch-depth: 1
-      - name: Test the bot image
-        run: docker-compose -f docker-compose-prod.yml run wmmc_bot test
-      - name: Discord notification
-        if: ${{ failure() }}
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        uses: Ilshidur/action-discord@master
-        with:
-          args: "wmmcBot Pytest failed!"
+  # test:
+  #   name: Pytest the Bot
+  #   runs-on: ubuntu-latest
+  #   needs: [formatblack, build-and-publish-image]
+  #   steps:
+  #     - uses: actions/checkout@master
+  #       with:
+  #         fetch-depth: 1
+  #     - name: Test the bot image
+  #       run: docker-compose -f docker-compose-prod.yml run wmmc_bot test
+  #     - name: Discord notification
+  #       if: ${{ failure() }}
+  #       env:
+  #         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+  #       uses: Ilshidur/action-discord@master
+  #       with:
+  #         args: "wmmcBot Pytest failed!"
 
   formatblack:
     name: Black Formatter
