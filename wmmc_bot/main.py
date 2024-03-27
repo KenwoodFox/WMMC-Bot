@@ -16,6 +16,7 @@ class WMMCBot(object):
         # Intents (new iirc)
         intents = Intents(messages=True, guilds=True)
         intents.message_content = True
+        intents.members = True
 
         # Create our discord bot
         self.bot = commands.Bot(command_prefix="^", intents=intents)

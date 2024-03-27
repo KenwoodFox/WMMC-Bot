@@ -99,7 +99,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
         logging.info("Scheduling weather alert")
 
         try:
-            wait = seconds_until(8, 00)  # Wait here till 8am
+            wait = seconds_until(7, 00)  # Wait here till 7am
             logging.info(f"Waiting {wait:.2f} seconds before running")
             await asyncio.sleep(wait)
             logging.info("Running now!")
@@ -111,6 +111,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
 
             logging.info("Getting weather")
             data = await getweather()
+            daysToEvent = self.getDaysToEvent()
 
             # How many attempts we get
             tries = 3
@@ -136,7 +137,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
                     logging.warn(
                         f"Last weather reading is out of date, sending.. {tries} left"
                     )
-                    await alert_channel.send(f"```\n{data}\n```")
+                    await alert_channel.send(f"```\n{data}\n\n{daysToEvent}```")
 
             if success != True:
                 logging.error("Did not send succesfully...")
