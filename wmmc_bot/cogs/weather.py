@@ -99,7 +99,7 @@ class WeatherCog(commands.Cog, name="WeatherCog"):
         logging.info("Scheduling weather alert")
 
         try:
-            wait = seconds_until(8, 00)  # Wait here till 8am
+            wait = seconds_until(7, 00)  # Wait here till 7am
             logging.info(f"Waiting {wait:.2f} seconds before running")
             await asyncio.sleep(wait)
             logging.info("Running now!")
