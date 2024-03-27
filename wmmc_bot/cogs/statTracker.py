@@ -14,6 +14,8 @@ from typing import Literal, Optional
 from discord import app_commands
 from discord.ext import commands, tasks
 
+from utilities.common import seconds_until
+
 # Define the SQLAlchemy engine
 engine = create_engine("postgresql://db/database", echo=True)
 
@@ -152,6 +154,59 @@ class StatTracker(commands.Cog, name="StatTacker"):
         finally:
             session.close()
 
+    @app_commands.command(name="admin_stats")
+    @app_commands.autocomplete(helmet=prefetchHelmets)
+    @app_commands.autocomplete(training=prefetchTraining)
+    @app_commands.autocomplete(intercom=prefetchIntercoms)
+    @app_commands.autocomplete(bike_model=prefetchModels)
+    @commands.has_role("Admin")
+    async def recordStatsAdmin(
+        self,
+        ctx: discord.Interaction,
+        user: discord.Member,
+        helmet: str,
+        intercom: str,
+        training: str,
+        bike_model: str,
+        mileage: int,
+    ):
+        session = Session()
+
+        """ Just a copy of the regular recordStats but allows admins to insert UIDs manually """
+
+        try:
+            # Check if the user already exists in the database
+            existing_user = session.query(UserStats).filter_by(id=str(user.id)).first()
+
+            # If the user exists, update the attributes
+            if existing_user:
+                await ctx.response.send_message(
+                    f"Recording you as an existing user! Bike {bike_model}"
+                )
+                existing_user.helmet = helmet
+                existing_user.model = bike_model
+                existing_user.intercom = intercom
+                existing_user.mileage = mileage
+                existing_user.training = training
+            # If the user doesn't exist, create a new one
+            else:
+                await ctx.response.send_message(
+                    f"Recording you as a new user! Bike {bike_model}"
+                )
+                new_user = UserStats(
+                    id=user.id,
+                    helmet=helmet,
+                    model=bike_model,
+                    intercom=intercom,
+                    mileage=mileage,
+                    training=training,
+                )
+                session.add(new_user)
+
+            session.commit()
+        finally:
+            session.close()
+
     def getRows(self):
         session = Session()
         try:
@@ -166,8 +221,13 @@ class StatTracker(commands.Cog, name="StatTacker"):
 
         for user in self.getRows():
             # Need to fetch local username
-            member = guild.get_member(int(user.id))
-            username = member.display_name
+            username = "Error"
+            try:
+                member = guild.get_member(int(user.id))
+                username = member.display_name
+            except:
+                logging.error(f"Error fetching username for {user.id}")
+                pass
 
             # Build a row
             msg += f"{username:20}"
