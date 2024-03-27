@@ -14,7 +14,7 @@ from discord import app_commands
 from discord.ext import commands
 
 # Define the SQLAlchemy engine
-engine = create_engine("db://postgres_db/database", echo=True)
+engine = create_engine("postgresql://db/database", echo=True)
 
 # Create a session maker
 Session = sessionmaker(bind=engine)
@@ -27,7 +27,7 @@ Base = declarative_base()
 class UserStats(Base):
     __tablename__ = "user_stats"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
     helmet = Column(String)
     model = Column(String)
     intercom = Column(String)
@@ -39,7 +39,69 @@ class StatTracker(commands.Cog, name="StatTacker"):
     def __init__(self, bot):
         self.bot = bot
 
+        # Create all
+        Base.metadata.create_all(engine)
+
+    async def prefetchHelmets(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Returns a discord selector list of all the previous entries"""
+
+        return [
+            app_commands.Choice(name=v, value=v)
+            for v in self.get_unique_values("helmet")
+        ]
+
+    async def prefetchIntercoms(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Returns a discord selector list of all the previous entries"""
+
+        return [
+            app_commands.Choice(name=v, value=v)
+            for v in self.get_unique_values("intercom")
+        ]
+
+    async def prefetchModels(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        """Returns a discord selector list of all the previous entries"""
+
+        return [
+            app_commands.Choice(name=v, value=v)
+            for v in self.get_unique_values("model")
+        ]
+
+    async def prefetchTraining(
+        self,
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        return [app_commands.Choice(name=v, value=v) for v in ["BRC", "ERC"]]
+
+    def get_unique_values(self, column_name):
+        """Return a list of unique values for a particular colum name"""
+        session = Session()
+
+        try:
+            # Query the database for distinct values of the specified column
+            values = session.query(getattr(UserStats, column_name)).distinct().all()
+            print(values)
+            return [value[0] for value in values]
+        finally:
+            session.close()
+
     @app_commands.command(name="record_stats")
+    @app_commands.autocomplete(helmet=prefetchHelmets)
+    @app_commands.autocomplete(training=prefetchTraining)
+    @app_commands.autocomplete(intercom=prefetchIntercoms)
+    @app_commands.autocomplete(bike_model=prefetchModels)
     async def recordStats(
         self,
         ctx: discord.Interaction,
@@ -49,44 +111,48 @@ class StatTracker(commands.Cog, name="StatTacker"):
         bike_model: str,
         mileage: int,
     ):
-        with open(self.yamlPath, "r") as file:
-            cur = yaml.safe_load(file)
-            cur.update(
-                {
-                    ctx.user.id: [
-                        bike_model,
-                        helmet,
-                        intercom,
-                        training,
-                        mileage,
-                    ]
-                }
-            )
-
-        with open(self.yamlPath, "w") as file:
-            yaml.safe_dump(cur, file)
+        session = Session()
+        new_user = UserStats(
+            id=ctx.user.id,
+            helmet=helmet,
+            model=bike_model,
+            intercom=intercom,
+            mileage=mileage,
+            training=training,
+        )
+        session.add(new_user)
+        session.commit()
 
         await ctx.response.send_message(
-            f"Got {bike_model}, {helmet} with intercom {intercom} and training {training}"
+            f"Got {bike_model}, {helmet} with intercom {intercom} and training {training}!\nRun `\stats` to see your position"
         )
+
+    def getRows(self):
+        session = Session()
+        try:
+            # Query the database for users ordered by mileage
+            users = session.query(UserStats).order_by(UserStats.mileage).all()
+            return users
+        finally:
+            session.close()
 
     @app_commands.command(name="stats")
     async def showData(self, ctx: discord.Interaction):
-        with open(self.yamlPath, "r") as file:
-            data = yaml.safe_load(file)
-
         msg = f"```md\n  ===  WMMC Stats!  ===  \n\n{'Member':20}{'Bike':10}{'Helmet':10}{'Intercom':10}{'Training':10}{'Mileage':10}\n"
 
-        for user in data:
+        for user in self.getRows():
             # Need to fetch local username
             guild = ctx.guild
-            member = guild.get_member(int(user))
+            member = guild.get_member(int(user.id))
             username = member.global_name
 
             # Build a row
             msg += f"{username:20}"
-            for stat in data[user]:
-                msg += f"{stat:10}"
+            msg += f"{user.model:10}"
+            msg += f"{user.helmet:10}"
+            msg += f"{user.intercom:10}"
+            msg += f"{user.training:10}"
+            msg += f"{user.mileage:10}"
 
             # End a row
             msg += "\n"

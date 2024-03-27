@@ -6,7 +6,13 @@ services:
     restart: always
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER=root
       - POSTGRES_DB=database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     logging:
       options:
         max-size: 10m
@@ -17,6 +23,9 @@ services:
 
   wmmc_bot:
     image: wmmc_bot:$TAG
+    depends_on:
+      db:
+        condition: service_healthy
     build:
       context: .
       dockerfile: Dockerfile
