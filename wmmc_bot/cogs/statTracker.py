@@ -224,7 +224,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
             username = "Error"
             try:
                 member = guild.get_member(int(user.id))
-                username = member.display_name
+                username = member.display_name[:18]
             except:
                 logging.error(f"Error fetching username for {user.id}")
                 pass
