@@ -46,7 +46,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
         Base.metadata.create_all(engine)
 
         # Tasks
-        self.dailyStats.start()
+        # self.dailyStats.start()
 
     async def prefetchHelmets(
         self,
