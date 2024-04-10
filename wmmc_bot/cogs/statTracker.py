@@ -57,7 +57,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
 
         return [
             app_commands.Choice(name=v, value=v)
-            for v in self.get_unique_values("helmet")
+            for v in self.get_unique_values("helmet", interaction.user.id)
         ]
 
     async def prefetchIntercoms(
@@ -69,7 +69,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
 
         return [
             app_commands.Choice(name=v, value=v)
-            for v in self.get_unique_values("intercom")
+            for v in self.get_unique_values("intercom", interaction.user.id)
         ]
 
     async def prefetchModels(
@@ -81,7 +81,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
 
         return [
             app_commands.Choice(name=v, value=v)
-            for v in self.get_unique_values("model")
+            for v in self.get_unique_values("model", interaction.user.id)
         ]
 
     async def prefetchTraining(
@@ -89,17 +89,43 @@ class StatTracker(commands.Cog, name="StatTacker"):
         interaction: discord.Interaction,
         current: str,
     ) -> list[app_commands.Choice[str]]:
-        return [app_commands.Choice(name=v, value=v) for v in ["BRC", "ERC", "None"]]
+        """Returns a discord selector list of all the previous entries"""
 
-    def get_unique_values(self, column_name):
-        """Return a list of unique values for a particular colum name"""
+        return [
+            app_commands.Choice(name=v, value=v)
+            for v in self.get_unique_values("training", interaction.user.id)
+        ]
+
+    def get_unique_values(self, column_name, user_id=None):
+        """Return a list of unique values for a particular column name."""
         session = Session()
 
         try:
             # Query the database for distinct values of the specified column
-            values = session.query(getattr(UserStats, column_name)).distinct().all()
+            values_query = session.query(getattr(UserStats, column_name)).distinct()
+
+            # Get the distinct values
+            values = [value[0] for value in values_query.all()]
+
+            # If user_id is provided, prioritize the last entered value for that user
+            if user_id is not None:
+                last_entry = (
+                    session.query(getattr(UserStats, column_name))
+                    .filter_by(id=str(user_id))
+                    .order_by(UserStats.id.desc())
+                    .first()
+                )
+                if last_entry:
+                    last_value = last_entry[0]
+                    # Move the last entered value to the top of the list
+                    values = [last_value] + [
+                        value for value in values if value != last_value
+                    ]
+
             print(values)
-            return [value[0] for value in values]
+            return values
+        except Exception as e:
+            logging.error(e)
         finally:
             session.close()
 
