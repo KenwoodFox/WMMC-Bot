@@ -176,6 +176,9 @@ class StatTracker(commands.Cog, name="StatTacker"):
                 )
                 session.add(new_user)
 
+            guild = ctx.guild
+            await ctx.followup.send(self.buildStats(guild, ctx.user.id))
+
             session.commit()
         finally:
             session.close()
@@ -207,7 +210,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
             # If the user exists, update the attributes
             if existing_user:
                 await ctx.response.send_message(
-                    f"Recording you as an existing user! Bike {bike_model}"
+                    f"Updating entry for {user.global_name} manually"
                 )
                 existing_user.helmet = helmet
                 existing_user.model = bike_model
@@ -242,7 +245,7 @@ class StatTracker(commands.Cog, name="StatTacker"):
         finally:
             session.close()
 
-    def buildStats(self, guild):
+    def buildStats(self, guild, highlightId=0):
         msg = f"```md\n  ===  WMMC Stats!  ===  \n\n{'Member':20}{'Bike':10}{'Helmet':10}{'Intercom':10}{'Training':10}{'Mileage':10}\n"
 
         for user in self.getRows():
@@ -264,7 +267,10 @@ class StatTracker(commands.Cog, name="StatTacker"):
             msg += f"{user.mileage:10}"
 
             # End a row
-            msg += "\n"
+            if int(user.id) == highlightId:
+                msg += " <---\n"
+            else:
+                msg += "\n"
 
         msg += "\n```"
 
@@ -274,6 +280,29 @@ class StatTracker(commands.Cog, name="StatTacker"):
     async def showData(self, ctx: discord.Interaction):
         guild = ctx.guild
         await ctx.response.send_message(self.buildStats(guild))
+
+    @app_commands.command(name="delete_user")
+    @commands.has_role("Admin")
+    async def delUser(self, ctx: discord.Interaction, member: discord.Member):
+        session = Session()
+
+        try:
+            # Query the database for the user's entry based on their user_id
+            user_entry = session.query(UserStats).filter_by(id=str(member.id)).first()
+
+            if user_entry:
+                # If the user's entry exists, delete it
+                session.delete(user_entry)
+                session.commit()
+                await ctx.response.send_message(
+                    f"Entry for {member.display_name} ({member.id}) deleted from the database."
+                )
+            else:
+                await ctx.response.send_message(
+                    f"No entry found for {member.display_name} ({member.id})."
+                )
+        finally:
+            session.close()
 
     @tasks.loop(minutes=1)
     async def dailyStats(self):
