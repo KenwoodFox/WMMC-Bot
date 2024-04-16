@@ -176,12 +176,12 @@ class StatTracker(commands.Cog, name="StatTacker"):
                 )
                 session.add(new_user)
 
-            guild = ctx.guild
-            await ctx.followup.send(self.buildStats(guild, ctx.user.id))
-
             session.commit()
         finally:
             session.close()
+
+        guild = ctx.guild
+        await ctx.followup.send(self.buildStats(guild, ctx.user.id))
 
     @app_commands.command(name="admin_stats")
     @app_commands.autocomplete(helmet=prefetchHelmets)
