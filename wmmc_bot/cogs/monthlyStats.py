@@ -9,7 +9,7 @@ import asyncio
 from datetime import datetime, timedelta
 
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, desc
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, desc, cast
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -204,6 +204,25 @@ class MonthlyStats(commands.Cog, name="MonthlyStats"):
         session.close()
         return leaderboard
 
+    def delete_entries_by_user_id(self, user_id: str):
+        """
+        Delete all entries from the database for a specific user_id.
+        """
+        session = Session()
+
+        # Query and delete all entries with the given user_id
+        entries_to_delete = (
+            session.query(MonthlyStatModel)
+            .filter(cast(MonthlyStatModel.user_id, String) == str(user_id))
+            .all()
+        )
+
+        for entry in entries_to_delete:
+            session.delete(entry)
+
+        session.commit()
+        session.close()
+
     def getUsername(self, guild, id):
         username = "Error"
         try:
@@ -218,7 +237,7 @@ class MonthlyStats(commands.Cog, name="MonthlyStats"):
         data = self.get_raw_leaderboard()
         prev_data = self.old_leaderboard
 
-        header = f"```diff\n === Monthly Stats for [] ===\n\n"
+        header = f"```diff\n === Monthly Stats for [] ===\n\n  User              Bike           Mileage\n"
 
         _ret = header
 
@@ -238,10 +257,12 @@ class MonthlyStats(commands.Cog, name="MonthlyStats"):
                     mismatch = True
                 else:
                     sym = "-"
-            _ret += f"{sym} `{self.getUsername(_guild, entry[0])}\t{entry[1]}\t{entry[2]}`\n"
+            _ret += f"{sym} {self.getUsername(_guild, entry[0]):18}{entry[1]:10}{entry[2]:10}\n"
 
         if bump:
             self.old_leaderboard = data
+
+        _ret += f"\nVersion {os.environ.get('GIT_COMMIT')}\n"
         _ret += "```"
 
         return _ret
@@ -254,6 +275,7 @@ class MonthlyStats(commands.Cog, name="MonthlyStats"):
         bike_model: str,
         mileage: int,
     ):
+        """Record a new entry for the monthly leaderboard"""
 
         await ctx.response.defer()
 
@@ -275,9 +297,23 @@ class MonthlyStats(commands.Cog, name="MonthlyStats"):
 
     @app_commands.command(name="thismonth")
     async def thisMonth(self, ctx: discord.Interaction):
+        """Get the leaderboard for this month"""
         await ctx.response.defer()
         guild = ctx.guild
         await ctx.followup.send(self.buildTextLeaderboard(guild))
+
+    @app_commands.command(name="clearmonthly")
+    async def clearMonthly(self, ctx: discord.Interaction):
+        """Delete all my entries"""
+
+        await ctx.response.defer()
+
+        self.delete_entries_by_user_id(ctx.user.id)
+
+        guild = ctx.guild
+        await ctx.followup.send(
+            f"Deleted all entries for {ctx.user.id}\n{self.buildTextLeaderboard(guild)}"
+        )
 
 
 async def setup(bot):
