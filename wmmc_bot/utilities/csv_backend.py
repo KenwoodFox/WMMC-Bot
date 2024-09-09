@@ -129,7 +129,7 @@ def get_overview():
     for row in data:
         name = row["realName"] or row["discordUsername"]  # Use real name if available
         honorary_status = (
-            "Yes" if row["honorary"] == "Yes" else "No"
+            "Yes" if row["honorary"] == "True" else "No"
         )  # Display honorary status
         line = f"{name:<{name_col_width}}{honorary_status:<{honorary_col_width}}"  # Format name and honorary status
 
