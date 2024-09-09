@@ -113,23 +113,33 @@ def get_overview():
     non_year_fields = ["discordID", "discordUsername", "realName", "honorary"]
     year_columns = [field for field in fieldnames if field not in non_year_fields]
 
+    # Define column widths
+    name_col_width = 20
+    honorary_col_width = 10
+    year_col_width = 6
+
     # Start formatting the overview
-    overview = "```\nName                 " + "    ".join(year_columns) + "\n"
+    overview = "```\n"
+    overview += (
+        f"{'Name':<{name_col_width}}{'Honorary':<{honorary_col_width}}"
+        + "".join(f"{year:>{year_col_width}}" for year in year_columns)
+        + "\n"
+    )
 
     for row in data:
         name = row["realName"] or row["discordUsername"]  # Use real name if available
-        line = f"{name:<20}"  # Format name with fixed width for alignment
+        honorary_status = (
+            "Yes" if row["honorary"] == "Yes" else "No"
+        )  # Display honorary status
+        line = f"{name:<{name_col_width}}{honorary_status:<{honorary_col_width}}"  # Format name and honorary status
 
-        # Check honorary status and handle yearly contributions
-        if row["honorary"] == "Yes":
-            line += " " * (len(year_columns) * 6) + "Honorary"
-        else:
-            for year in year_columns:
-                line += f"{row.get(year, '0'):>6}"  # Right-align the contributions or default to 0
+        # Add yearly contributions
+        for year in year_columns:
+            line += f"{row.get(year, '0'):>{year_col_width}}"  # Right-align the contributions or default to 0
 
         overview += line + "\n"
 
-    overview += "\n```"
+    overview += "```"
 
     return overview.strip()
 
