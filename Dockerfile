@@ -9,10 +9,6 @@ LABEL authors="31870999+KenwoodFox@users.noreply.github.com"
 ARG APP_NAME=fops-bot
 ENV APP_NAME=${APP_NAME}
 
-# Get the current git version
-ARG GIT_COMMIT
-ENV GIT_COMMIT=$GIT_COMMIT
-
 # App home
 ARG HOME="/app"
 ENV HOME=${HOME}
@@ -34,6 +30,10 @@ RUN pip install -r requirements/requirements.txt --no-cache-dir
 # Install testing reqs
 RUN pip install -r requirements/test_requirements.txt --no-cache-dir
 
+# Get the current git version
+ARG GIT_COMMIT
+ENV GIT_COMMIT=$GIT_COMMIT
+
 # Copy in everything else
 ADD . ${HOME}
 # Add /bin to path
@@ -45,6 +45,9 @@ RUN pip install -e ${HOME} --no-cache-dir
 # Drop root and change ownership of /app to app:app
 RUN chown -R ${USER_ID}:${GROUP_ID} ${HOME}
 USER ${USER_ID}
+
+# The `|| exit 1` isn't required but it's good practice anyway.
+HEALTHCHECK CMD discordhealthcheck || exit 1
 
 # Run the entrypoint bin
 ENTRYPOINT ["entrypoint"]
