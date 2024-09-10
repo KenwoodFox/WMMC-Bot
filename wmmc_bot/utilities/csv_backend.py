@@ -40,7 +40,7 @@ def init_backend():
             )
 
 
-def update_user_data(user_id, updates):
+def update_user_data(user_id, updates, add=False):
     """Update or add new user data."""
     data, fieldnames = load_csv_data()
     current_year = str(datetime.now().year)
@@ -58,7 +58,10 @@ def update_user_data(user_id, updates):
     for row in data:
         if row["discordID"] == str(user_id):
             for key, value in updates.items():
-                row[key] = str(int(row.get(key, "0")) + int(value))
+                if add:
+                    row[key] = str(int(row.get(key, "0")) + int(value))
+                else:
+                    row[key] = str(value)
             updated = True
             break
 
@@ -85,6 +88,8 @@ def update_user_data(user_id, updates):
     # Save data if there were changes to fieldnames or if a new user was added
     if fieldnames_changed or updated or new_user:
         save_csv_data(data, fieldnames)
+    else:
+        logging.warn(f"Didn't update anything for {updates}, userid was {user_id}")
 
 
 def get_row(discord_id):

@@ -134,7 +134,7 @@ class AdminCog(commands.Cog, name="AdminTools"):
 
     @app_commands.command(name="calculate_remaining_dues")
     async def calculate_remaining_dues(self, interaction: discord.Interaction):
-        """Calculate how much dues you owe for the remaining part of the year."""
+        """Calculate your dues for this year (thank you Apollo)"""
 
         base_price = 60
         today = date.today()
@@ -153,10 +153,16 @@ class AdminCog(commands.Cog, name="AdminTools"):
             # Calculate remaining dues
             remaining_dues = max(0, prorated_dues - amount_paid)
 
-            await interaction.response.send_message(
-                f"You owe ${remaining_dues:.2f} for the rest of the year.",
-                ephemeral=True,
-            )
+            if remaining_dues <= 0:
+                await interaction.response.send_message(
+                    f"You're paid for this year!",
+                    ephemeral=True,
+                )
+            else:
+                await interaction.response.send_message(
+                    f"You owe ${remaining_dues:.2f} for the rest of the year.",
+                    ephemeral=True,
+                )
         else:
             await interaction.response.send_message(
                 "Your membership data was not found.", ephemeral=True
