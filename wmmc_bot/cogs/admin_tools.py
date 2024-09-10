@@ -70,6 +70,36 @@ class AdminCog(commands.Cog, name="AdminTools"):
 
         await interaction.response.send_message(f"Updated dues.", ephemeral=True)
 
+    def member_since(self, _id: int):
+        """Returns the year as an int, that a user first was recorded"""
+
+        current_year = str(datetime.now().year)
+        member_data = get_row(_id)
+
+        if member_data:
+            # Iterate to find how long they've been a member
+            member_since = int(current_year)
+            for v in member_data.keys():
+                try:
+                    year = int(v)
+                    if year > 2021:
+                        if len(member_data[v]) > 0:
+                            member_since = min(member_since, year)
+                except ValueError:
+                    pass
+
+            return member_since
+        else:
+            return None
+
+    def is_first_year(self, _id: int) -> bool:
+        """True if this is a member's first year"""
+
+        current_year = int(datetime.now().year)
+        first_year = self.member_since(_id)  # The first year
+
+        return current_year == first_year
+
     @app_commands.command(name="my_member_status")
     async def my_member_status(self, interaction: discord.Interaction):
         member_data = get_row(interaction.user.id)
@@ -84,17 +114,6 @@ class AdminCog(commands.Cog, name="AdminTools"):
             # If they're an honrary member
             honorary = member_data.get("honorary", "No") == "Yes"
 
-            # Iterate to find how long they've been a member
-            member_since = current_year
-            for v in member_data.keys():
-                try:
-                    year = int(v)
-                    if year > 2021:
-                        if len(member_data.get(year, "")) > 0:
-                            member_since = min(member_since, year)
-                except ValueError:
-                    pass
-
             color = (
                 discord.Color.gold()
                 if honorary
@@ -102,7 +121,11 @@ class AdminCog(commands.Cog, name="AdminTools"):
             )
             embed = discord.Embed(title="Membership Status", color=color)
             embed.add_field(name="Name", value=name, inline=True)
-            embed.add_field(name="Member Since", value=member_since, inline=False)
+            embed.add_field(
+                name="Member Since",
+                value=self.member_since(interaction.user.id),
+                inline=False,
+            )
             if honorary:
                 embed.add_field(
                     name="Honorary Member",
@@ -151,18 +174,31 @@ class AdminCog(commands.Cog, name="AdminTools"):
             amount_paid = int(member_data.get(current_year, "0"))
 
             # Calculate remaining dues
-            remaining_dues = max(0, prorated_dues - amount_paid)
+            if self.is_first_year(interaction.user.id):
+                remaining_dues = max(0, prorated_dues - amount_paid)
 
-            if remaining_dues <= 0:
-                await interaction.response.send_message(
-                    f"You're paid for this year!",
-                    ephemeral=True,
-                )
+                if remaining_dues <= 0:
+                    await interaction.response.send_message(
+                        f"You're paid for this year!",
+                        ephemeral=True,
+                    )
+                else:
+                    await interaction.response.send_message(
+                        f"You owe ${remaining_dues:.2f} for the rest of the year.",
+                        ephemeral=True,
+                    )
             else:
-                await interaction.response.send_message(
-                    f"You owe ${remaining_dues:.2f} for the rest of the year.",
-                    ephemeral=True,
-                )
+                if amount_paid == base_price:
+                    await interaction.response.send_message(
+                        f"You're paid for this year (returning member)",
+                        ephemeral=True,
+                    )
+                else:
+                    await interaction.response.send_message(
+                        f"You're not paid for this year. ${amount_paid:.2f}/${base_price:.2f}",
+                        ephemeral=True,
+                    )
+
         else:
             await interaction.response.send_message(
                 "Your membership data was not found.", ephemeral=True
