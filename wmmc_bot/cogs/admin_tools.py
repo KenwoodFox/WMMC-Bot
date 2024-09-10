@@ -3,7 +3,7 @@
 import discord
 import logging
 
-from datetime import datetime
+from datetime import datetime, date
 
 from discord import app_commands
 from discord.ext import commands
@@ -27,14 +27,14 @@ class AdminCog(commands.Cog, name="AdminTools"):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="register_user")
+    @app_commands.command(name="register_member")
     @app_commands.checks.has_role("Admin")
     @app_commands.describe(
         user="The user to register",
         real_name="Real name of the member",
         honorary="Is the member honorary? Yes or No",
     )
-    async def register_user(
+    async def register_member(
         self,
         interaction: discord.Interaction,
         user: discord.User,
@@ -70,8 +70,8 @@ class AdminCog(commands.Cog, name="AdminTools"):
 
         await interaction.response.send_message(f"Updated dues.", ephemeral=True)
 
-    @app_commands.command(name="status")
-    async def status(self, interaction: discord.Interaction):
+    @app_commands.command(name="my_member_status")
+    async def my_member_status(self, interaction: discord.Interaction):
         member_data = get_row(interaction.user.id)
 
         if member_data:
@@ -120,17 +120,47 @@ class AdminCog(commands.Cog, name="AdminTools"):
                 "Member data not found.", ephemeral=True
             )
 
-    @app_commands.command(name="overview")
+    @app_commands.command(name="member_overview")
     @app_commands.checks.has_role("Admin")
-    async def overview(self, interaction: discord.Interaction):
+    async def member_overview(self, interaction: discord.Interaction):
         """Get a quick overview of everyone in the club"""
         await interaction.response.send_message(get_overview())
 
-    @app_commands.command(name="get_raw_data")
+    @app_commands.command(name="get_raw_member_data")
     @app_commands.checks.has_role("Admin")
-    async def get_raw_data(self, interaction: discord.Interaction):
+    async def get_raw_member_data(self, interaction: discord.Interaction):
         """Send the raw CSV data file."""
         await interaction.response.send_message(file=discord.File(get_backend_path()))
+
+    @app_commands.command(name="calculate_remaining_dues")
+    async def calculate_remaining_dues(self, interaction: discord.Interaction):
+        """Calculate how much dues you owe for the remaining part of the year."""
+
+        base_price = 60
+        today = date.today()
+        current_year = str(today.year)
+
+        # Get the number of remaining months (including the current month)
+        remaining_months = 12 - today.month + 1  # +1 to include the current month
+        prorated_dues = (base_price / 12) * remaining_months
+
+        # Get the member data for the user running the command
+        member_data = get_row(interaction.user.id)
+
+        if member_data:
+            amount_paid = int(member_data.get(current_year, "0"))
+
+            # Calculate remaining dues
+            remaining_dues = max(0, prorated_dues - amount_paid)
+
+            await interaction.response.send_message(
+                f"You owe ${remaining_dues:.2f} for the rest of the year.",
+                ephemeral=True,
+            )
+        else:
+            await interaction.response.send_message(
+                "Your membership data was not found.", ephemeral=True
+            )
 
 
 async def setup(bot):
