@@ -110,6 +110,7 @@ class AdminCog(commands.Cog, name="AdminTools"):
         """
 
         member_data = get_row(interaction.user.id)
+        await interaction.response.defer()
 
         if member_data:
             # The current year
@@ -146,17 +147,16 @@ class AdminCog(commands.Cog, name="AdminTools"):
                     inline=False,
                 )
 
-            await interaction.response.send_message(embed=embed)
+            await interaction.followup.send(embed=embed)
         else:
-            await interaction.response.send_message(
-                "Member data not found.", ephemeral=True
-            )
+            await interaction.followup.send("Member data not found.", ephemeral=True)
 
     @app_commands.command(name="member_overview")
     @app_commands.checks.has_role("Admin")
     async def member_overview(self, interaction: discord.Interaction):
         """Get a quick overview of everyone in the club"""
-        await interaction.response.send_message(get_overview())
+        await interaction.response.defer()
+        await interaction.followup.send(get_overview())
 
     @app_commands.command(name="get_raw_member_data")
     @app_commands.checks.has_role("Admin")
@@ -201,47 +201,49 @@ class AdminCog(commands.Cog, name="AdminTools"):
     async def calculate_remaining_dues(self, interaction: discord.Interaction):
         """Calculate your dues for this year (thank you Apollo)"""
 
+        await interaction.response.defer()
+
         try:
             paid, due = self.remaining_dues(interaction.user.id)
             logging.info(f"Paid {paid}, due {due} for user {interaction.user}")
 
             if paid == None or due == None:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     "Your membership data was not found.", ephemeral=True
                 )
                 return
             elif paid >= due and due == self.base_price:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You're a returning member and paid for this year! ${paid:.2f}/${due:.2f}",
                     ephemeral=True,
                 )
             elif paid >= due:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You're paid for this year! ${paid:.2f}/${due:.2f}",
                     ephemeral=True,
                 )
             elif paid < due and paid != 0:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You're still missing a portion of your payment${paid:.2f}/${due:.2f}",
                     ephemeral=True,
                 )
 
             elif paid < due and due < self.base_price:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You only need to pay dues on the remaining part of the year ${paid:.2f}/${due:.2f}",
                     ephemeral=True,
                 )
             elif paid < due and due == self.base_price:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"You need to pay full dues for this year. ${paid:.2f}/${due:.2f}",
                     ephemeral=True,
                 )
             else:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     "Some other dues condition! Speak to an admin!", ephemeral=True
                 )
         except Exception as e:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"There was some other error! {e}", ephemeral=True
             )
             raise e
