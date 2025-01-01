@@ -27,6 +27,9 @@ class AdminCog(commands.Cog, name="AdminTools"):
     def __init__(self, bot):
         self.bot = bot
 
+        # Consts
+        self.base_price = 30
+
     @app_commands.command(name="register_member")
     @app_commands.checks.has_role("Admin")
     @app_commands.describe(
@@ -59,7 +62,7 @@ class AdminCog(commands.Cog, name="AdminTools"):
     @app_commands.checks.has_role("Admin")
     @app_commands.describe(user="User to update dues for", amount="Amount paid")
     @app_commands.autocomplete(user=autocomplete_users)
-    async def dues(self, interaction: discord.Interaction, user: str, amount: int):
+    async def dues(self, interaction: discord.Interaction, user: str, amount: float):
         # The current year
         current_year = str(datetime.now().year)
 
@@ -134,7 +137,9 @@ class AdminCog(commands.Cog, name="AdminTools"):
                 )
             else:
                 embed.add_field(
-                    name="Paid This Year", value="Yes" if paid else "No", inline=False
+                    name="Paid This Year",
+                    value=f"${paid:.2f}/${due:.2f}",
+                    inline=False,
                 )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -155,54 +160,79 @@ class AdminCog(commands.Cog, name="AdminTools"):
         """Send the raw CSV data file."""
         await interaction.response.send_message(file=discord.File(get_backend_path()))
 
-    @app_commands.command(name="calculate_remaining_dues")
-    async def calculate_remaining_dues(self, interaction: discord.Interaction):
-        """Calculate your dues for this year (thank you Apollo)"""
-
-        base_price = 60
+    def remaining_dues(self, _id: int) -> (float, float):
         today = date.today()
         current_year = str(today.year)
 
         # Get the number of remaining months (including the current month)
         remaining_months = 12 - today.month + 1  # +1 to include the current month
-        prorated_dues = (base_price / 12) * remaining_months
+        prorated_dues = (self.base_price / 12) * remaining_months
 
         # Get the member data for the user running the command
-        member_data = get_row(interaction.user.id)
+        member_data = get_row(_id)
+        logging.info(f"Member data was {member_data}")
 
         if member_data:
-            amount_paid = int(member_data.get(current_year, "0"))
+            amount_paid = float(member_data.get(current_year, "0"))
+            logging.info(f"current year {amount_paid}")
 
             # Calculate remaining dues
-            if self.is_first_year(interaction.user.id):
+            if self.is_first_year(_id):
                 remaining_dues = max(0, prorated_dues - amount_paid)
-
-                if remaining_dues <= 0:
-                    await interaction.response.send_message(
-                        f"You're paid for this year!",
-                        ephemeral=True,
-                    )
-                else:
-                    await interaction.response.send_message(
-                        f"You owe ${remaining_dues:.2f} for the rest of the year.",
-                        ephemeral=True,
-                    )
+                return amount_paid, prorated_dues
             else:
-                if amount_paid == base_price:
-                    await interaction.response.send_message(
-                        f"You're paid for this year (returning member)",
-                        ephemeral=True,
-                    )
-                else:
-                    await interaction.response.send_message(
-                        f"You're not paid for this year. ${amount_paid:.2f}/${base_price:.2f}",
-                        ephemeral=True,
-                    )
-
+                return amount_paid, self.base_price
         else:
+            return (None, None)
+
+    @app_commands.command(name="calculate_remaining_dues")
+    async def calculate_remaining_dues(self, interaction: discord.Interaction):
+        """Calculate your dues for this year (thank you Apollo)"""
+
+        try:
+            paid, due = self.remaining_dues(interaction.user.id)
+            logging.info(f"Paid {paid}, due {due} for user {interaction.user}")
+
+            if paid == None or due == None:
+                await interaction.response.send_message(
+                    "Your membership data was not found.", ephemeral=True
+                )
+                return
+            elif paid >= due and due == self.base_price:
+                await interaction.response.send_message(
+                    f"You're a returning member and paid for this year! ${paid:.2f}/${due:.2f}",
+                    ephemeral=True,
+                )
+            elif paid >= due:
+                await interaction.response.send_message(
+                    f"You're paid for this year! ${paid:.2f}/${due:.2f}",
+                    ephemeral=True,
+                )
+            elif paid < due and paid != 0:
+                await interaction.response.send_message(
+                    f"You're still missing a portion of your payment${paid:.2f}/${due:.2f}",
+                    ephemeral=True,
+                )
+
+            elif paid < due and due < self.base_price:
+                await interaction.response.send_message(
+                    f"You only need to pay dues on the remaining part of the year ${paid:.2f}/${due:.2f}",
+                    ephemeral=True,
+                )
+            elif paid < due and due == self.base_price:
+                await interaction.response.send_message(
+                    f"You need to pay full dues for this year. ${paid:.2f}/${due:.2f}",
+                    ephemeral=True,
+                )
+            else:
+                await interaction.response.send_message(
+                    "Some other dues condition! Speak to an admin!", ephemeral=True
+                )
+        except Exception as e:
             await interaction.response.send_message(
-                "Your membership data was not found.", ephemeral=True
+                f"There was some other error! {e}", ephemeral=True
             )
+            raise e
 
 
 async def setup(bot):
