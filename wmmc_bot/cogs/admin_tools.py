@@ -116,15 +116,15 @@ class AdminCog(commands.Cog, name="AdminTools"):
             current_year = str(datetime.now().year)
             # Name
             name = member_data.get("realName", "...")
-            # If they're paid for this year
-            paid = member_data.get(current_year, "0") != "0"
+            # Paid and Dues
+            paid, due = self.remaining_dues(interaction.user.id)
             # If they're an honrary member
             honorary = member_data.get("honorary", "False") == "True"
 
             color = (
                 discord.Color.gold()
                 if honorary
-                else (discord.Color.green() if paid else discord.Color.red())
+                else (discord.Color.green() if paid >= due else discord.Color.red())
             )
             embed = discord.Embed(title="Membership Status", color=color)
             embed.add_field(name="Name", value=name, inline=True)
