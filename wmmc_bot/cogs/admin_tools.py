@@ -105,6 +105,10 @@ class AdminCog(commands.Cog, name="AdminTools"):
 
     @app_commands.command(name="my_member_status")
     async def my_member_status(self, interaction: discord.Interaction):
+        """
+        A badge to show your member status!
+        """
+
         member_data = get_row(interaction.user.id)
 
         if member_data:
@@ -115,7 +119,7 @@ class AdminCog(commands.Cog, name="AdminTools"):
             # If they're paid for this year
             paid = member_data.get(current_year, "0") != "0"
             # If they're an honrary member
-            honorary = member_data.get("honorary", "No") == "Yes"
+            honorary = member_data.get("honorary", "False") == "True"
 
             color = (
                 discord.Color.gold()
@@ -142,7 +146,7 @@ class AdminCog(commands.Cog, name="AdminTools"):
                     inline=False,
                 )
 
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed)
         else:
             await interaction.response.send_message(
                 "Member data not found.", ephemeral=True
@@ -173,6 +177,10 @@ class AdminCog(commands.Cog, name="AdminTools"):
         logging.info(f"Member data was {member_data}")
 
         if member_data:
+            # Skip if honorary
+            if member_data.get("honorary", "False") == "True":
+                return (0, 0)  # For freeee
+
             amount_paid = float(member_data.get(current_year, "0"))
             logging.info(f"current year {amount_paid}")
 
