@@ -181,7 +181,11 @@ class AdminCog(commands.Cog, name="AdminTools"):
             if member_data.get("honorary", "False") == "True":
                 return (0, 0)  # For freeee
 
-            amount_paid = float(member_data.get(current_year, "0"))
+            try:
+                amount_paid = float(member_data.get(current_year, "0"))
+            except ValueError:
+                logging.error(f"Aaa got y2k bug moment, inserting 0")
+                amount_paid=0
             logging.info(f"current year {amount_paid}")
 
             # Calculate remaining dues
